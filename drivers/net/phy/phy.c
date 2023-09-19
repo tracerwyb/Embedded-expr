@@ -478,7 +478,9 @@ int phy_init(void)
 	head->next = (void *)head->next + gd->reloc_off;
 	head->prev = (void *)head->prev + gd->reloc_off;
 #endif
-
+#ifdef CONFIG_PHY_MAXIO
+   	phy_maxio_init();
+#endif
 #ifdef CONFIG_B53_SWITCH
 	phy_b53_init();
 #endif
@@ -704,6 +706,15 @@ static struct phy_device *phy_device_create(struct mii_dev *bus, int addr,
 int __weak get_phy_id(struct mii_dev *bus, int addr, int devad, u32 *phy_id)
 {
 	int phy_reg;
+
+#ifdef CONFIG_PHY_MAXIO
+    	/*
+	 *An MDIO connects to multiple PHYs requiring write before read.
+	 *This operation does not affect one MDIO connected to a single PHY 
+	 *MII_PHYSID1 is a read-only register and writine to it has no effect
+	 */
+	bus->write(bus, addr, devad, MII_PHYSID2 , 0x0);
+#endif
 
 	/*
 	 * Grab the bits from PHYIR1, and put them
